@@ -1,4 +1,4 @@
-
+# Used FRED Data on hourly wages and US Regular All Formation Gas Prices to show affordability of gas over time
 ```{r}
 # Load the readr package
 library(readr)
