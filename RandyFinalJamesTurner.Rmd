@@ -1,0 +1,273 @@
+---
+title: "Untitled"
+output: html_document
+date: "2024-04-17"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{R}
+# Load data from a CSV file (assuming your data is in CSV format)
+coffee_data <- read.csv("~/Downloads/Coffee_Shop_Data (2).txt")
+
+# View the first few rows of the data to ensure it's loaded correctly
+head(coffee_data)
+```
+
+```{r}
+coffee_data['transaction_date'] = coffee_data['transaction_date'].str.replace('-','/)
+
+
+
+
+
+````
+
+
+
+```{r}
+# Remove rows with NA values
+coffee_data_clean <- na.omit(coffee_data)
+
+# View the first few rows of the cleaned data to ensure NA values are removed
+head(coffee_data_clean)
+```
+
+```{r}
+# Add 1 to the Day.Of.Week column
+coffee_data$Day.of.Week <- coffee_data$Day.of.Week + 1
+```
+
+```{r}
+# Create dummy variables for the 7 days of the week
+coffee_data$Monday <- ifelse(coffee_data$Day.Name == "Monday", 1, 0)
+coffee_data$Tuesday <- ifelse(coffee_data$Day.Name == "Tuesday", 1, 0)
+coffee_data$Wednesday <- ifelse(coffee_data$Day.Name == "Wednesday", 1, 0)
+coffee_data$Thursday <- ifelse(coffee_data$Day.Name == "Thursday", 1, 0)
+coffee_data$Friday <- ifelse(coffee_data$Day.Name == "Friday", 1, 0)
+coffee_data$Saturday <- ifelse(coffee_data$Day.Name == "Saturday", 1, 0)
+coffee_data$Sunday <- ifelse(coffee_data$Day.Name == "Sunday", 1, 0)
+
+# View the updated data frame
+head(coffee_data)
+```
+
+```{r}
+# Assuming your data frame is named coffee_data and it contains a column named Month.Name
+
+# Create dummy variables for the months
+coffee_data$January <- ifelse(coffee_data$Month.Name == "January", 1, 0)
+coffee_data$February <- ifelse(coffee_data$Month.Name == "February", 1, 0)
+coffee_data$March <- ifelse(coffee_data$Month.Name == "March", 1, 0)
+coffee_data$April <- ifelse(coffee_data$Month.Name == "April", 1, 0)
+coffee_data$May <- ifelse(coffee_data$Month.Name == "May", 1, 0)
+coffee_data$June <- ifelse(coffee_data$Month.Name == "June", 1, 0)
+coffee_data$July <- ifelse(coffee_data$Month.Name == "July", 1, 0)
+coffee_data$August <- ifelse(coffee_data$Month.Name == "August", 1, 0)
+coffee_data$September <- ifelse(coffee_data$Month.Name == "September", 1, 0)
+coffee_data$October <- ifelse(coffee_data$Month.Name == "October", 1, 0)
+coffee_data$November <- ifelse(coffee_data$Month.Name == "November", 1, 0)
+coffee_data$December <- ifelse(coffee_data$Month.Name == "December", 1, 0)
+
+# View the updated data frame
+head(coffee_data)
+```
+
+```{r}
+
+# Create dummy variables for store_location
+dummy_vars <- model.matrix(~ store_location - 1, data = coffee_data)
+
+# Attach the dummy variables to the original data frame
+coffee_data <- cbind(coffee_data, dummy_vars)
+
+
+# View the updated data frame
+head(coffee_data)
+```
+#Question 1A : Total salesin dollars across months
+```{r}
+library(ggplot2)
+
+# Aggregate total sales by month
+sales_by_month <- aggregate(Total_Bill ~ Month.Name, data = coffee_data, FUN = sum)
+
+# Define the order of months
+month_order <- c("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+
+# Reorder the factor levels of Month.Name
+sales_by_month$Month.Name <- factor(sales_by_month$Month.Name, levels = month_order)
+
+# Plot the total sales variation across months as a pie chart with data labels inside
+ggplot(sales_by_month, aes(x = "", y = Total_Bill, fill = Month.Name, label = scales::dollar(Total_Bill))) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar(theta = "y") +  # Convert the bar plot to a pie chart
+  geom_text(position = position_stack(vjust = 0.5), color = "white") +  # Add data labels inside the slices
+  labs(title = "Total Sales (in Dollars) Variation Across Months",
+       fill = "Month",
+       y = "Total Sales ($USD)",
+       x = "") +  # Remove x-axis label
+  scale_y_continuous(labels = scales::dollar_format(scale = 0, suffix = "")) +  # Remove decimals from labels
+  theme_minimal()
+```
+
+
+#Question1B : Total sales of each product across stores 
+
+```{r}
+# Aggregate total sales by product category and store
+sales_by_category_store <- aggregate(Total_Bill ~ product_category + store_location, data = coffee_data, FUN = sum)
+
+# Plot
+ggplot(sales_by_category_store, aes(x = product_category, y = Total_Bill, fill = store_location)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Total Sales (in Dollars) by Product Category for Different Stores",
+       x = "Product Category",
+       y = "Total Sales ($USD)",
+       fill = "Store") +
+  theme_minimal() +
+  theme(legend.position = "top",
+         axis.text.x = element_text(angle = 45, hjust = 1))
+```
+#Question 1C : Total Sales in Dollars across Hours of the day
+
+```{r}
+# Extract hour from transaction_time
+coffee_data$hour <- as.numeric(format(as.POSIXct(coffee_data$transaction_time, format="%H:%M:%S"), "%H"))
+
+# Aggregate total sales by hour
+sales_by_hour <- aggregate(Total_Bill ~ hour, data = coffee_data, FUN = sum)
+
+# Convert hour to character and format as hh:mm
+sales_by_hour$hour_label <- sprintf("%02d:00", sales_by_hour$hour)
+
+# Plot
+ggplot(sales_by_hour, aes(x = hour, y = Total_Bill)) +
+  geom_area(fill = "lightblue") +
+  geom_line(color = "blue", size =2) +
+  labs(title = "Sales Variation (in Dollars) Across Hours of the Day",
+       x = "Hour of the Day",
+       y = "Total Sales ($USD") +
+  scale_x_continuous(breaks = seq(0, 23, by = 1)) +
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+#Question 2
+
+#2A : Random Forrest Predicting Sales for each day at 11:00:00am-11:59:59am
+```{r}
+library(randomForest)
+
+coffee_data$store_location <- as.factor(coffee_data$store_location)
+coffee_data$Day.Name <- as.factor(coffee_data$Day.Name)
+
+# Split data into training and testing sets (80% training, 20% testing)
+set.seed(123)  
+train_index <- sample(1:nrow(coffee_data), 0.8 * nrow(coffee_data))
+train_data <- coffee_data[train_index, ]
+test_data <- coffee_data[-train_index, ]
+```
+
+```{r}
+# Filter the data for rows where the product category is "Tea"
+tea_data <- subset(coffee_data, product_category == "Tea")
+
+# Train the Random Forest model
+rf_model <- randomForest(Total_Bill ~ store_location + Day.Name + hour, data = tea_data, ntree = 500)
+
+```
+
+```{r}
+# Predict tea sales on the testing data
+predictions_tea_sales_testing <- predict(rf_model, newdata = test_data)
+
+# Filter the test data for rows where the product category is "Tea"
+test_data_tea <- subset(test_data, product_category == "Tea")
+
+# Calculate Mean Absolute Error (MAE) for tea sales
+mae_tea_sales <- mean(abs(predictions_tea_sales_testing - test_data_tea$Total_Bill))
+```
+#2B
+```{r}
+# Filter the data for Wednesdays between 11:00:00 and 11:59:59
+wednesday_11_hour <- subset(tea_data, Day.Name == "Wednesday" & hour == 11)
+
+# Create a data frame with combinations of store_location and hour
+input_data <- expand.grid(store_location = levels(tea_data$store_location), hour = 11, Day.Name = "Wednesday")
+
+# Ensure the factor levels match those in the training data
+input_data$store_location <- factor(input_data$store_location, levels = levels(tea_data$store_location))
+input_data$Day.Name <- factor(input_data$Day.Name, levels = levels(tea_data$Day.Name))
+
+# Predict total sales of tea using the trained Random Forest model
+predictions <- predict(rf_model, newdata = input_data)
+
+# Combine predictions with input data
+predictions_df <- data.frame(input_data, Predicted_Tea_Sales = predictions)
+
+# Format the predictions data frame for nicer output
+predictions_df <- predictions_df %>%
+  mutate(Predicted_Tea_Sales = round(Predicted_Tea_Sales, 2)) %>%  # Round predicted sales to two decimal places
+  arrange(store_location)  # Arrange rows by store location
+
+# Print formatted predictions
+print(predictions_df)
+```
+
+```{r}
+# Filter the data for sales of tea at the Astoria store location, on Wednesdays, and at 11:00:00 hour
+tea_sales_astoria_wednesday_11_hour <- subset(coffee_data, store_location == "Astoria" & product_category == "Tea" & Day.Name == "Wednesday" & hour == 11)
+
+# Count the number of rows
+num_sales_astoria_wednesday_11_hour <- nrow(tea_sales_astoria_wednesday_11_hour)
+
+# Print the result
+print(num_sales_astoria_wednesday_11_hour)
+```
+
+#Question C : Predicted level of Coffee Sales across the stores during the hours of the day
+
+```{r}
+# Filter the data for rows where the product category is "Coffee"
+coffee_data <- subset(coffee_data, product_category == "Coffee")
+
+# Train the Random Forest model for coffee sales
+rf_model_coffee <- randomForest(Total_Bill ~ store_location + Day.Name + hour, data = coffee_data, ntree = 500)
+```
+
+
+```{r}
+# Create a sequence of hours from 0 to 23
+hours <- seq(0, 23, by = 1)
+
+# Create a data frame to store the predictions
+predictions_df_coffee <- expand.grid(store_location = levels(coffee_data$store_location),
+                                     hour = hours,
+                                     Day.Name = "Wednesday")
+
+# Ensure the factor levels match those in the coffee data
+predictions_df_coffee$store_location <- factor(predictions_df_coffee$store_location, levels = levels(coffee_data$store_location))
+predictions_df_coffee$Day.Name <- factor(predictions_df_coffee$Day.Name, levels = levels(coffee_data$Day.Name))
+
+# Predict coffee sales for each hour using the trained Random Forest model
+predictions_df_coffee$Predicted_Coffee_Sales <- predict(rf_model_coffee, newdata = predictions_df_coffee)
+```
+
+
+```{r}
+# Aggregate the predicted sales across all store locations for each hour
+aggregate_sales <- aggregate(Predicted_Coffee_Sales ~ hour, predictions_df_coffee, mean)
+
+# Plot the mean predicted level of sales for coffee across the course of the day as a line plot
+ggplot(aggregate_sales, aes(x = hour, y = Predicted_Coffee_Sales)) +
+  geom_line(color = "blue") +
+  labs(title = "Predicted Level of Coffee Sales Across the Hours of the Day",
+       x = "Hour of the Day",
+       y = "Mean Predicted Sales") +
+  scale_x_continuous(breaks = seq(6, 20, by = 1), minor_breaks = NULL, limits = c(6, 20)) +  # Set breaks and limits for the x-axis
+  theme_minimal()
+```
+

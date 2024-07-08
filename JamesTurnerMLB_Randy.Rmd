@@ -1,0 +1,104 @@
+```{r}
+# Load the readxl package
+library(readxl)
+
+# Set the working directory to your downloads folder
+setwd("~/Downloads")
+
+# Load the Excel file into R
+```
+
+```{r}
+# Remove rows with missing values (NA)
+mlb_data_clean <- na.omit(mlb_data)
+library(dplyr)
+```
+
+```{r}
+# Assuming your data is called 'baseball_data'
+mlb_data_clean$Metro_Population_Millions <- round(mlb_data_clean$Metro_Population / 1e6, digits = 1)
+mlb_data_clean$Real_Payroll_Millions <- round(mlb_data_clean$Real_Payroll / 1e6, digits = 1)
+```
+
+```{r}
+library(ggplot2)
+
+# Function to create scatter plot with line of best fit and error band
+create_scatter_plot <- function(data, year) {
+  plot_title <- paste("Payroll x Attendence", year)
+  
+  plot <- ggplot(data = data, aes(x = `Real_Payroll` / 1e6, y = `Av_Attend`)) +  # Convert Payroll to millions
+    geom_point(shape = 16, size = 3, color = "red") +
+    geom_smooth(method = "lm", se = TRUE, color = "black") +  # Add line of best fit with error band
+    ggtitle(plot_title) +
+    xlab("Payroll (Millions)") +  # Update x-axis label
+    ylab("Average Attendance") +
+    theme(panel.background = element_rect(fill = "lightblue"))  # Set background to white
+  
+  return(plot)
+}
+
+# Filter the data for each year and create scatter plot individually
+for (year in 2000:2009) {
+  # Filter the data for the current year
+  data_year <- mlb_data_clean[mlb_data_clean$Year == year, ]
+  
+  # Create and display the scatter plot
+  plot <- create_scatter_plot(data_year, year)
+  print(plot)
+}
+```
+
+```{r}
+# Install and load libraries if needed
+library(tidyverse) # for data manipulation and visualization
+#install.packages("lmtest")
+library(lmtest)  # for regression diagnostics (optional)
+
+# Define the formula including explanatory variables
+model <- lm(Av_Attend ~ Metro_Population + RS + RA + W + OBP + SLG + BA + OOBP + OSLG + Real_Payroll, data = mlb_data_clean)
+
+# View the model summary
+summary(model)
+```
+```{r}
+# Install and load libraries if needed
+library(tidyverse) # for data manipulation and visualization
+#install.packages("lmtest")
+library(lmtest)  # for regression diagnostics (optional)
+
+# Define the formula including explanatory variables
+model <- lm(PCT_Attend ~ Metro_Population + RS + RA + W + OBP + SLG + BA + OOBP + OSLG + Real_Payroll, data = mlb_data_clean)
+
+# View the model summary
+summary(model)
+```
+```{r}
+library(ggplot2)
+
+# Function to create scatter plot with line of best fit and error band
+create_scatter_plot <- function(data, year) {
+  plot_title <- paste("Real Payroll x PCT_Attend", year)
+  
+  plot <- ggplot(data = data, aes(x = `Real_Payroll` / 1e6, y = `PCT_Attend`)) +  # Convert Payroll to millions
+    geom_point(shape = 16, size = 3, color = "red") +
+    geom_smooth(method = "lm", se = TRUE, color = "black") +  # Add line of best fit with error band
+    ggtitle(plot_title) +
+    xlab("Real Payroll") +  # Update x-axis label
+    ylab("PCT_Attend") +
+    theme(panel.background = element_rect(fill = "lightblue"))  # Set background to white
+  
+  return(plot)
+}
+
+# Filter the data for each year and create scatter plot individually
+for (year in 2000:2009) {
+  # Filter the data for the current year
+  data_year <- mlb_data_clean[mlb_data_clean$Year == year, ]
+  
+  # Create and display the scatter plot
+  plot <- create_scatter_plot(data_year, year)
+  print(plot)
+}
+```
+
