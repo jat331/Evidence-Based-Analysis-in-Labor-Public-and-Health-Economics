@@ -1,0 +1,119 @@
+
+```{r}
+# Load the readr package
+library(readr)
+
+# Define the file path
+file_path <- "/Users/jamesturner/Downloads/HE.csv"
+
+# Read the CSV file into a dataframe
+he_data <- read_csv(file_path)
+
+# View the first few rows of the dataframe
+head(he_data)
+```
+
+```{r}
+# Load the readr package
+library(readr)
+
+# Define the file path
+file_path <- "/Users/jamesturner/Downloads/Gas.csv"
+
+# Read the CSV file into a dataframe
+gas_data <- read_csv(file_path)
+
+# View the first few rows of the dataframe
+head(gas_data)
+```
+
+
+```{r}
+# Convert the DATE column to Date format
+gas_data <- gas_data %>%
+  mutate(DATE = as.Date(DATE, format = "%Y-%m-%d"))
+
+# Filter the data to remove rows before 2003-03-01
+filtered_gas_data <- gas_data %>%
+  filter(DATE >= as.Date("2006-03-01"))
+
+# View the first few rows of the filtered dataframe
+head(filtered_gas_data)
+```
+
+```{r}
+## Load the required packages
+library(dplyr)
+
+# Assuming the filtered_gas_data is already loaded
+
+# Convert DATE column to Date format
+filtered_gas_data$DATE <- as.Date(filtered_gas_data$DATE)
+
+# Extract year and month from DATE
+filtered_gas_data <- filtered_gas_data %>%
+  mutate(Year = lubridate::year(DATE),
+         Month = lubridate::month(DATE))
+
+# Group by Year and Month, keep only the first row
+filtered_gas_data <- filtered_gas_data %>%
+  group_by(Year, Month) %>%
+  slice(1)
+
+# View the modified dataset
+head(filtered_gas_data)
+```
+
+```{r}
+# Load the required packages
+library(dplyr)
+
+# Assuming the he_data is already loaded
+
+# Convert DATE column to Date format
+he_data$DATE <- as.Date(he_data$DATE)
+
+# Extract year and month from DATE
+he_data <- he_data %>%
+  mutate(Year = lubridate::year(DATE),
+         Month = lubridate::month(DATE))
+
+# View the modified dataset
+head(he_data)
+```
+
+```{r}
+# Merge the datasets by Year and Month
+merged_data <- merge(he_data, filtered_gas_data, by = c("Year", "Month"), all = TRUE)
+
+# View the merged dataset
+head(merged_data)
+```
+
+
+```{r}
+# Convert CES0500000003 and GASREGW to numeric, handling any non-numeric or missing values
+merged_data <- merged_data %>%
+  mutate(
+    CES0500000003 = as.numeric(CES0500000003),
+    GASREGW = as.numeric(GASREGW),
+    GallonsOfGasPerHourWorked = ifelse(is.na(CES0500000003) | is.na(GASREGW) | GASREGW == 0, NA, CES0500000003 / GASREGW)
+  )
+
+# View the updated dataset
+head(merged_data)
+```
+
+```{r}
+# Load the required package
+library(ggplot2)
+
+# Convert Year and Month to a single variable "Time"
+merged_data$Time <- as.Date(paste(merged_data$Year, merged_data$Month, "01", sep = "-"))
+
+# Plot the graph
+ggplot(merged_data, aes(x = Time, y = GallonsOfGasPerHourWorked)) +
+  geom_line() +
+  labs(x = "Time", y = "Gallons of Gas per Hr Worked") +
+  ggtitle("Gallons of Gas per Hour Worked Over Time")
+```
